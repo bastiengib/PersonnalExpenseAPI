@@ -94,6 +94,33 @@ router.route('/expenses/:id')
 
             res.json({ message: 'Expense removed!' });
         });
+    })
+    // update expense
+    .put(function(req, res) {
+        var $set = {
+            name:  req.body.name,  // set the expenses name (comes from the request)
+            amount: req.body.amount,
+            date: req.body.date,
+            category: req.body.category
+        };
+        
+        Expense.update({ _id: req.params.id}, {$set: $set}, function(err, expenses) {
+            if (err) {
+                res.send(err);
+                console.log(err);
+            }
+            res.json({ message: 'Expense updated!' });
+        });
+    })
+    // get expense by Id
+    .get(function(req, res) {
+        Expense.findById(req.params.id, function(err, expense) {
+            if (err) {
+                res.send(err);
+            }
+
+            res.json(expense);
+        });
     });
 
 // on routes that end in /expenses
