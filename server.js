@@ -13,7 +13,7 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var port = process.env.PORT || 7820;        // set our port
+var port = process.env.PORT || 7821;        // set our port
 
 // database
 var mongoose   = require('mongoose');
@@ -41,6 +41,7 @@ router.use(function(req, res, next) {
     // do logging
     console.log('Something is happening.');
     res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
@@ -81,6 +82,17 @@ router.route('/expenses')
             }
 
             res.json(expenses);
+        });
+    });
+router.route('/expenses/:id')
+    // remove expenses by Id
+    .delete(function(req, res) {
+        Expense.findByIdAndRemove(req.params.id, function(err, expenses) {
+            if (err) {
+                res.send(err);
+            }
+
+            res.json({ message: 'Expense removed!' });
         });
     });
 
