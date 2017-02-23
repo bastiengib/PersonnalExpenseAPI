@@ -131,7 +131,7 @@ router.route('/categories')
         
         var category = new Category();      // create a new instance of the Expense model
         category.name = req.body.name;  // set the expenses name (comes from the request)
-
+        console.log(category.name);
         // save the expense and check for errors
         category.save(function(err) {
             if (err) {
@@ -149,6 +149,17 @@ router.route('/categories')
             }
 
             res.json(categories);
+        });
+    });
+router.route('/categories/:id')
+    // remove expenses by Id
+    .delete(function(req, res) {
+        Category.findByIdAndRemove(req.params.id, function(err, categories) {
+            if (err) {
+                res.send(err);
+            }
+
+            res.json({ message: 'Category removed!' });
         });
     });
 
