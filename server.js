@@ -130,7 +130,8 @@ router.route('/categories')
     .post(function(req, res) {
         
         var category = new Category();      // create a new instance of the Expense model
-        category.name = req.body.name;  // set the expenses name (comes from the request)
+        category.name = req.body.name;
+        category.color = req.body.color;  // set the expenses name (comes from the request)
         console.log(category.name);
         // save the expense and check for errors
         category.save(function(err) {
