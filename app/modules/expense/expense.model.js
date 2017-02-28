@@ -7,7 +7,8 @@ var ExpenseSchema   = new Schema({
     name: String,
     amount: {type: Number, min:0},
     date: Date,
-    category:{type: Schema.Types.ObjectId, ref: 'Category'}
+    category: {type: Schema.Types.ObjectId, ref: 'Category'},
+    template: {type: Schema.Types.ObjectId, ref: 'Template'}
 });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);

@@ -29,6 +29,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/PersonnalExpense', function(err) {
 // models
 var Expense = require('./app/modules/expense/expense.model.js');
 var Category = require('./app/modules/category/category.model.js');
+var Template = require('./app/modules/template/template.model.js');
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -64,6 +65,7 @@ router.route('/expenses')
         expense.amount = req.body.amount;
         expense.date = req.body.date;
         expense.category = req.body.category;
+        expense.template = null;
 
         // save the expense and check for errors
         expense.save(function(err) {
@@ -123,13 +125,83 @@ router.route('/expenses/:id')
         });
     });
 
+// on routes that end in /templates
+// ----------------------------------------------------
+router.route('/templates')
+    // create a template (accessed at POST http://localhost:8080/api/templates)
+    .post(function(req, res) {
+        
+        var template = new Template();      // create a new instance of the Template model
+        template.name = req.body.name;  // set the templates name (comes from the request)
+        template.amount = req.body.amount;
+        template.date = req.body.date;
+        template.category = req.body.category;
+
+        // save the template and check for errors
+        template.save(function(err) {
+            if (err) {
+                res.send(err);
+                console.log(err);
+            }
+            res.json({ message: 'Template created!' });
+        });
+    })
+    // get all the templates (accessed at GET http://localhost:8080/api/templates)
+    .get(function(req, res) {
+        Template.find(function(err, templates) {
+            if (err) {
+                res.send(err);
+            }
+
+            res.json(templates);
+        });
+    });
+router.route('/templates/:id')
+    // remove templates by Id
+    .delete(function(req, res) {
+        Template.findByIdAndRemove(req.params.id, function(err, templates) {
+            if (err) {
+                res.send(err);
+            }
+
+            res.json({ message: 'Template removed!' });
+        });
+    })
+    // update template
+    .put(function(req, res) {
+        var $set = {
+            name:  req.body.name,  // set the templates name (comes from the request)
+            amount: req.body.amount,
+            date: req.body.date,
+            category: req.body.category
+        };
+        
+        Template.update({ _id: req.params.id}, {$set: $set}, function(err, templates) {
+            if (err) {
+                res.send(err);
+                console.log(err);
+            }
+            res.json({ message: 'Template updated!' });
+        });
+    })
+    // get template by Id
+    .get(function(req, res) {
+        Template.findById(req.params.id, function(err, template) {
+            if (err) {
+                res.send(err);
+            }
+
+            res.json(template);
+        });
+    });
+
 // on routes that end in /expenses
 // ----------------------------------------------------
 router.route('/categories')
     // create a expense (accessed at POST http://localhost:8080/api/expenses)
     .post(function(req, res) {
         
-        var category = new Category();      // create a new instance of the Expense model
+        var category = new Category();      // create a new instance of the Template model
         category.name = req.body.name;
         category.color = req.body.color;  // set the expenses name (comes from the request)
         console.log(category.name);
