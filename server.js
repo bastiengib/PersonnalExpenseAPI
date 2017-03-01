@@ -68,12 +68,20 @@ router.route('/expenses')
         expense.template = null;
 
         // save the expense and check for errors
-        expense.save(function(err) {
+        expense.save(function(err, expense) {
             if (err) {
                 res.send(err);
                 console.log(err);
             }
-            res.json({ message: 'Expense created!' });
+            //res.json({ message: 'Expense created!' });
+            var result = {
+                _id: expense.id,
+                name: expense.name,
+                amount: expense.amount,
+                date: expense.date,
+                category: expense.category
+            };
+            res.json({item: result});
         });
     })
     // get all the expenses (accessed at GET http://localhost:8080/api/expenses)
@@ -138,12 +146,18 @@ router.route('/templates')
         template.category = req.body.category;
 
         // save the template and check for errors
-        template.save(function(err) {
+        template.save(function(err, template) {
             if (err) {
                 res.send(err);
                 console.log(err);
             }
-            res.json({ message: 'Template created!' });
+            var result = {
+                _id: template.id,
+                name: template.name,
+                amount: template.amount,
+                category: template.category
+            };
+            res.json({item: result});
         });
     })
     // get all the templates (accessed at GET http://localhost:8080/api/templates)
@@ -206,12 +220,17 @@ router.route('/categories')
         category.color = req.body.color;  // set the expenses name (comes from the request)
         console.log(category.name);
         // save the expense and check for errors
-        category.save(function(err) {
+        category.save(function(err, cat) {
             if (err) {
                 res.send(err);
                 console.log(err);
             }
-            res.json({ message: 'Category created!' });
+            var result = {
+                _id: cat.id,
+                name: cat.name,
+                color: cat.color
+            };
+            res.json({item: result});
         });
     })
     // get all the expenses (accessed at GET http://localhost:8080/api/expenses)
