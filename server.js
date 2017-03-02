@@ -170,6 +170,7 @@ router.route('/templates')
             res.json(templates);
         });
     });
+
 router.route('/templates/:id')
     // remove templates by Id
     .delete(function(req, res) {
@@ -206,6 +207,41 @@ router.route('/templates/:id')
             }
 
             res.json(template);
+        });
+    });
+
+router.route('/templates/:id/apply')
+    // apply the template
+    .put(function(req, res) {
+        Template.findById(req.params.id, function(err, template) {
+            if (err) {
+                res.send(err);
+            }
+
+            var expense = new Expense();      // create a new instance from template
+            expense.name = template.name;  
+            expense.amount = template.amount;
+            expense.date = req.body.date;
+            expense.category = template.category;
+            expense.template = req.body.id;
+
+            // save the expense and check for errors
+            expense.save(function(err, expense) {
+                if (err) {
+                    res.send(err);
+                    console.log(err);
+                }
+                //res.json({ message: 'Expense created!' });
+                var result = {
+                    _id: expense._id,
+                    name: expense.name,
+                    amount: expense.amount,
+                    date: expense.date,
+                    category: expense.category,
+                    template: expense.template
+                };
+                res.json({item: result});
+            });
         });
     });
 
