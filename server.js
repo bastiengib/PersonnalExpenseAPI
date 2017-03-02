@@ -30,8 +30,11 @@ mongoose.connect('mongodb://127.0.0.1:27017/PersonnalExpense', function(err) {
 var Expense = require('./app/modules/expense/expense.model.js');
 var Category = require('./app/modules/category/category.model.js');
 var Template = require('./app/modules/template/template.model.js');
+var User = require('./app/modules/user/user.model.js');
+var Token = require('./app/modules/token/token.model.js');
 
-// ROUTES FOR OUR API
+var crypto = require('crypto');
+
 // =============================================================================
 // ROUTES FOR OUR API
 // =============================================================================
@@ -42,7 +45,7 @@ router.use(function(req, res, next) {
     // do logging
     console.log('Something is happening.');
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE");
+    res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, CONNECT");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
@@ -288,6 +291,87 @@ router.route('/categories/:id')
             }
 
             res.json({ message: 'Category removed!' });
+        });
+    });
+
+// on routes that end in /users
+// ----------------------------------------------------
+router.route('/users')
+    // create a expense (accessed at POST http://localhost:8080/api/users)
+    .post(function(req, res) {
+
+        // hash password 
+        Token.find({}, function(err, token) {
+            if (err) {
+                res.send(err);
+            }
+
+            console.log(token[0]._id);
+            var user = new User();      // create a new instance of the Template model
+
+            user.firstname = req.body.firstname;
+            user.lastname = req.body.lastname;
+            user.pseudo = req.body.pseudo;
+
+            //check if pseudo already exists
+            User.findOne({'pseudo':user.pseudo}, function(err, pseudo) {
+                if (err) {
+                    return res.send(err);
+                } else if (pseudo) {
+                    return res.status(403).send({message: "pseudo already used!"});
+                }
+
+                var buffer = new Buffer(""+token[0]._id, 'base64');
+                user.password = crypto.createHmac('sha256', buffer)
+                    .update(req.body.password).digest('base64');
+
+                // save the expense and check for errors
+                user.save(function(err, user) {
+                    if (err) {
+                        res.send(err);
+                        console.log(err);
+                    }
+                    var result = {
+                        _id: user.id,
+                        firstname : user.firstname,
+                        lastname : user.lastname,
+                        pseudo : user.pseudo,
+                        password : user.password
+                    };
+                    res.json({item: result});
+                });
+            });
+        }); 
+    });
+router.route('/users/connect')
+    .post(function(req, res) {
+        var pseudo = req.body.pseudo;
+
+        // hash password 
+        Token.find({}, function(err, token) {
+            if (err) {
+                res.send(err);
+            }
+            var buffer = new Buffer(""+token[0]._id, 'base64');
+            var password = crypto.createHmac('sha256', buffer)
+                .update(req.body.password).digest('base64');
+            
+            User.findOne({pseudo: pseudo, password: password}, function(err, connected) {
+                if (err) {
+                    res.send(err);
+                }
+                if (connected) {
+                    var result = {
+                        token: null,
+                        firstname: connected.firstname,
+                        lastname: connected.lastname,
+                        pseudo: connected.pseudo
+                    };
+                    res.json({item: result});
+                } else {
+                    res.status(403).send({message: "Inccorect credentials!"});
+                }
+            });
         });
     });
 
