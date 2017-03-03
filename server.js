@@ -301,66 +301,59 @@ router.route('/users')
     .post(function(req, res) {
 
         // hash password 
-        Token.find({}, function(err, token) {
+
+        var user = new User();      // create a new instance of the Template model
+
+        user.firstname = req.body.firstname;
+        user.lastname = req.body.lastname;
+        user.pseudo = req.body.pseudo;
+
+        //check if pseudo already exists
+        User.findOne({'pseudo':user.pseudo}, function(err, pseudo) {
             if (err) {
-                res.send(err);
+                return res.send(err);
+            } else if (pseudo) {
+                return res.status(403).send({message: "pseudo already used!"});
             }
 
-            console.log(token[0]._id);
-            var user = new User();      // create a new instance of the Template model
+            var salt = crypto.randomBytes(16).toString('base64');
+            user.password = crypto.createHmac('sha256', salt)
+                .update(req.body.password).digest('base64');
+            
+            user.salt = salt;
 
-            user.firstname = req.body.firstname;
-            user.lastname = req.body.lastname;
-            user.pseudo = req.body.pseudo;
-
-            //check if pseudo already exists
-            User.findOne({'pseudo':user.pseudo}, function(err, pseudo) {
+            // save the expense and check for errors
+            user.save(function(err, user) {
                 if (err) {
-                    return res.send(err);
-                } else if (pseudo) {
-                    return res.status(403).send({message: "pseudo already used!"});
+                    res.send(err);
+                    console.log(err);
                 }
-
-                var buffer = new Buffer(""+token[0]._id, 'base64');
-                user.password = crypto.createHmac('sha256', buffer)
-                    .update(req.body.password).digest('base64');
-
-                // save the expense and check for errors
-                user.save(function(err, user) {
-                    if (err) {
-                        res.send(err);
-                        console.log(err);
-                    }
-                    var result = {
-                        _id: user.id,
-                        firstname : user.firstname,
-                        lastname : user.lastname,
-                        pseudo : user.pseudo,
-                        password : user.password
-                    };
-                    res.json({item: result});
-                });
+                var result = {
+                    _id: user.id,
+                    firstname : user.firstname,
+                    lastname : user.lastname,
+                    pseudo : user.pseudo,
+                    password : user.password,
+                    hash: user.salt
+                };
+                res.json({item: result});
             });
-        }); 
+        });
     });
 router.route('/users/connect')
     .post(function(req, res) {
         var pseudo = req.body.pseudo;
 
         // hash password 
-        Token.find({}, function(err, token) {
+        User.findOne({pseudo: pseudo}, function(err, connected) {
             if (err) {
                 res.send(err);
             }
-            var buffer = new Buffer(""+token[0]._id, 'base64');
-            var password = crypto.createHmac('sha256', buffer)
-                .update(req.body.password).digest('base64');
-            
-            User.findOne({pseudo: pseudo, password: password}, function(err, connected) {
-                if (err) {
-                    res.send(err);
-                }
-                if (connected) {
+            if (connected) {
+                var password = crypto.createHmac('sha256', connected.salt)
+                    .update(req.body.password).digest('base64');
+                
+                if (password === connected.password) {
                     var result = {
                         token: null,
                         firstname: connected.firstname,
@@ -369,9 +362,11 @@ router.route('/users/connect')
                     };
                     res.json({item: result});
                 } else {
-                    res.status(403).send({message: "Inccorect credentials!"});
+                    res.status(403).send({message: "Invalid credentials!"});
                 }
-            });
+            } else {
+                res.status(403).send({message: "Invalid credentials!"});
+            }
         });
     });
 
