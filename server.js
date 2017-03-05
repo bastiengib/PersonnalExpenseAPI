@@ -84,6 +84,7 @@ router.route('/expenses')
             expense.date = req.body.date;
             expense.category = req.body.category;
             expense.template = null;
+            expense.owner = req.query.user;
 
             // save the expense and check for errors
             expense.save(function(err, expense) {
@@ -106,7 +107,7 @@ router.route('/expenses')
     // get all the expenses (accessed at GET http://localhost:8080/api/expenses)
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Expense.find(function(err, expenses) {
+            Expense.find({"owner": req.query.user}, function(err, expenses) {
                 if (err) {
                     res.send(err);
                 }
@@ -137,7 +138,7 @@ router.route('/expenses/:id')
                 category: req.body.category
             };
             
-            Expense.update({ _id: req.params.id}, {$set: $set}, function(err, expenses) {
+            Expense.update({ _id: req.params.id, "owner": req.query.user}, {$set: $set}, function(err, expenses) {
                 if (err) {
                     res.send(err);
                     console.log(err);
@@ -149,7 +150,7 @@ router.route('/expenses/:id')
     // get expense by Id
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Expense.findById(req.params.id, function(err, expense) {
+            Expense.findOne({"_id": req.params.id, "owner": req.query.user}, function(err, expense) {
                 if (err) {
                     res.send(err);
                 }
@@ -170,6 +171,7 @@ router.route('/templates')
             template.amount = req.body.amount;
             template.date = req.body.date;
             template.category = req.body.category;
+            template.owner = req.query.user
 
             // save the template and check for errors
             template.save(function(err, template) {
@@ -190,7 +192,7 @@ router.route('/templates')
     // get all the templates (accessed at GET http://localhost:8080/api/templates)
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Template.find(function(err, templates) {
+            Template.find({"owner": req.query.user}, function(err, templates) {
                 if (err) {
                     res.send(err);
                 }
@@ -223,7 +225,7 @@ router.route('/templates/:id')
                 category: req.body.category
             };
             
-            Template.update({ _id: req.params.id}, {$set: $set}, function(err, templates) {
+            Template.update({ _id: req.params.id, "owner": req.query.user}, {$set: $set}, function(err, templates) {
                 if (err) {
                     res.send(err);
                     console.log(err);
@@ -235,7 +237,7 @@ router.route('/templates/:id')
     // get template by Id
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Template.findById(req.params.id, function(err, template) {
+            Template.findOne({"_id": req.params.id, "owner": req.query.user}, function(err, template) {
                 if (err) {
                     res.send(err);
                 }
@@ -249,7 +251,7 @@ router.route('/templates/:id/apply')
     // apply the template
     .put(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Template.findById(req.params.id, function(err, template) {
+            Template.findOne({"_id": req.params.id, "owner": req.query.user}, function(err, template) {
                 if (err) {
                     res.send(err);
                 }
@@ -291,7 +293,7 @@ router.route('/categories')
             var category = new Category();      // create a new instance of the Template model
             category.name = req.body.name;
             category.color = req.body.color;  // set the expenses name (comes from the request)
-            console.log(category.name);
+            category.owner = req.query.user;
             // save the expense and check for errors
             category.save(function(err, cat) {
                 if (err) {
@@ -310,7 +312,7 @@ router.route('/categories')
     // get all the expenses (accessed at GET http://localhost:8080/api/expenses)
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function() {
-            Category.find(function(err, categories) {
+            Category.find({"owner": req.query.user}, function(err, categories) {
                 if (err) {
                     res.send(err);
                 }
@@ -345,14 +347,14 @@ router.route('/users')
 
         user.firstname = req.body.firstname;
         user.lastname = req.body.lastname;
-        user.pseudo = req.body.pseudo;
+        user.username = req.body.username;
 
-        //check if pseudo already exists
-        User.findOne({'pseudo':user.pseudo}, function(err, pseudo) {
+        //check if username already exists
+        User.findOne({'username':user.username}, function(err, username) {
             if (err) {
                 return res.send(err);
-            } else if (pseudo) {
-                return res.status(403).send({message: "pseudo already used!"});
+            } else if (username) {
+                return res.status(403).send({message: "username already used!"});
             }
 
             var salt = crypto.randomBytes(16).toString('base64');
@@ -371,7 +373,7 @@ router.route('/users')
                     _id: user.id,
                     firstname : user.firstname,
                     lastname : user.lastname,
-                    pseudo : user.pseudo,
+                    username : user.username,
                     password : user.password,
                     hash: user.salt
                 };
@@ -386,10 +388,10 @@ router.route('/users')
     });
 router.route('/users/connect')
     .post(function(req, res) {
-        var pseudo = req.body.pseudo;
+        var username = req.body.username;
 
         // hash password 
-        User.findOne({pseudo: pseudo}, function(err, connected) {
+        User.findOne({username: username}, function(err, connected) {
             if (err) {
                 res.send(err);
             }
@@ -403,7 +405,7 @@ router.route('/users/connect')
                         _id: connected._id,
                         firstname: connected.firstname,
                         lastname: connected.lastname,
-                        pseudo: connected.pseudo
+                        username: connected.username
                     };
                     // generate new connexion token
                     var token = new Token();
@@ -424,6 +426,24 @@ router.route('/users/connect')
                 res.status(403).send({message: "Invalid credentials!"});
             }
         });
+    });
+router.route('/users/disconnect')
+    .post(function(req, res) {
+        isConnected(req.body.token, req.body.user, res,function () {
+            Token.findOneAndRemove({"_id": req.params.token, "owner": req.query.user}, function(err, token) {
+                if (err) {
+                    res.send(err);
+                }
+                 var result = {
+                    token: null,
+                    _id: null,
+                    firstname: null,
+                    lastname: null,
+                    username: null
+                };
+                res.json({item: result});
+            });
+        });    
     });
 
 // REGISTER OUR ROUTES -------------------------------

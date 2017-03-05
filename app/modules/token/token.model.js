@@ -5,7 +5,7 @@ var Schema       = mongoose.Schema;
 
 var TokenSchema   = new Schema({
      user: {type: Schema.Types.ObjectId, ref: 'User'},
-     date: Date 
+     date: Date
 });
 
 module.exports = mongoose.model('Token', TokenSchema);

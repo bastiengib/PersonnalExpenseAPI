@@ -8,7 +8,8 @@ var ExpenseSchema   = new Schema({
     amount: {type: Number, min:0},
     date: Date,
     category: {type: Schema.Types.ObjectId, ref: 'Category'},
-    template: {type: Schema.Types.ObjectId, ref: 'Template'}
+    template: {type: Schema.Types.ObjectId, ref: 'Template'},
+    owner: {type: Schema.Types.ObjectId, ref: 'User'}
 });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);
