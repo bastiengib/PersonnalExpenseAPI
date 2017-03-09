@@ -262,6 +262,7 @@ router.route('/templates/:id/apply')
                 expense.date = req.body.date;
                 expense.category = template.category;
                 expense.template = req.body.id;
+                expense.owner = req.query.user;
 
                 // save the expense and check for errors
                 expense.save(function(err, expense) {
