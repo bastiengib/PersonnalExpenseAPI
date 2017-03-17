@@ -206,12 +206,30 @@ router.route('/templates/:id')
     // remove templates by Id
     .delete(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Template.findByIdAndRemove(req.params.id, function(err, templates) {
+            Template.findById(req.params.id, function(err, template) {
                 if (err) {
                     res.send(err);
                 }
-
-                res.json({ message: 'Template removed!' });
+                if (template._id) {
+                    Expense.findOne({'template': template._id}, function(err, expense){
+                        if (err) {
+                            res.send(err);
+                        }
+                        if (!expense) {
+                            Template.remove({'_id': req.params.id}, function(err,removed) {
+                                if (err) {
+                                    res.send(err);
+                                } else {
+                                    res.json({ message: 'Category succesfully removed!' });
+                                }
+                            });
+                        } else {
+                            res.status(403).json({ message: 'Please remove all connected expenses to this template' });
+                        }
+                    });
+                } else {
+                    res.json({ message: 'This template is not referenced in our data!' });
+                }
             });
         });
     })
@@ -326,12 +344,39 @@ router.route('/categories/:id')
     // remove expenses by Id
     .delete(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Category.findByIdAndRemove(req.params.id, function(err, categories) {
+            Category.findById(req.params.id, function(err, category) {
                 if (err) {
                     res.send(err);
                 }
-
-                res.json({ message: 'Category removed!' });
+                if (category._id) {
+                    Expense.findOne({'category': category._id}, function(err, expense){
+                        if (err) {
+                            res.send(err);
+                        }
+                        if (!expense) {
+                            Template.findOne({'category': category._id}, function(err, template){
+                                if (err) {
+                                    res.send(err);
+                                }
+                                if (!template) {
+                                    Category.remove({'_id': req.params.id}, function(err,removed) {
+                                        if (err) {
+                                            res.send(err);
+                                        } else {
+                                            res.json({ message: 'Category succesfully removed!' });
+                                        }
+                                    });
+                                } else {
+                                    res.status(403).json({ message: 'Please remove all connected templates to this category' });
+                                }
+                            });
+                        } else {
+                            res.status(403).json({ message: 'Please remove all connected expenses to this category' });
+                        }
+                    });
+                } else {
+                    res.json({ message: 'This category is not referenced in our data!' });
+                }
             });
         });
     });
