@@ -107,11 +107,32 @@ router.route('/expenses')
     // get all the expenses (accessed at GET http://localhost:8080/api/expenses)
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Expense.find({"owner": req.query.user}, function(err, expenses) {
+            var skip = parseInt(req.query.o);
+            var limit = parseInt(req.query.l);
+            var sort= {
+                date: parseInt(req.query.s)
+            };
+            /*Expense.find({"owner": req.query.user}, {}, {}, function(err, expenses) {
                 if (err) {
                     res.send(err);
                 }
-                res.json(expenses);
+                Expense.count({"owner": req.query.user}, function(err, count){
+                    if (err) {
+                        res.send(err);
+                    }
+                    res.json({ 'expenses': expenses, 'count':  count});
+                });
+            });*/
+            Expense.find({owner: req.query.user}).sort({date: sort.date}).skip(skip).limit(limit).exec(function (err, expenses){
+                if (err) {
+                    res.send(err);
+                }
+                Expense.count({"owner": req.query.user}, function(err, count){
+                    if (err) {
+                        res.send(err);
+                    }
+                    res.json({ 'expenses': expenses, 'count':  count});
+                });
             });
         });
     });
