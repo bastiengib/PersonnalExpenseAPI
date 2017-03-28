@@ -513,6 +513,47 @@ router.route('/users/disconnect')
         });    
     });
 
+router.route('/chart/permonth')
+    .get(function(req, res) {
+        var where = [
+            {
+                $project: {
+                    "year": { $year : "$date" }, 
+                    "month": { $month : "$date" },
+                    "_id": "$_id",
+                    "amount": "$amount",
+                    "category": "$category",
+                    "template": "$template",
+                    "owner": "$owner"
+                }
+            },
+            {
+                $match: {
+                    "owner": mongoose.Types.ObjectId(req.query.user),
+                    "year": parseInt(req.query.y, 10),
+                    "month": parseInt(req.query.m, 10)
+                }
+            },
+            {
+                $group: {
+                    _id: '$category', 
+                    count: {$sum: 1},
+                    sum : {$sum: '$amount'}
+                }
+            }
+        ];
+        isConnected(req.query.token, req.query.user, res, function () {
+            Expense.aggregate(where, function(err, data) {
+                if (err) {
+                    console.log(err.message);
+                    res.send(err);
+                }
+
+                res.json(data);
+            });
+        });
+    })
+
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
 app.use('/api', router);
