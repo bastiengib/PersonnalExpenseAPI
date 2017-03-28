@@ -74,6 +74,28 @@ router.get('/', function(req, res) {
 
 // on routes that end in /expenses
 // ----------------------------------------------------
+router.route('/expenses/export')
+    .get(function(req, res) {
+        isConnected(req.query.token, req.query.user, res, function () {
+            Expense.find({owner: req.query.user}).populate('category').exec(function (err, expenses){
+                if (err) {
+                    res.send(err);
+                }
+
+                var retour = [];
+                expenses.forEach(function(elt){
+                    retour.push({
+                        'a': elt._id.toString(),
+                        'b': elt.name,
+                        'c': elt.amount,
+                        'd': elt.date.getDate() +"/"+ elt.date.getMonth() +"/"+ elt.date.getFullYear(),
+                        'e': elt.category.name
+                    });
+                });
+                res.json(retour);
+            });
+        });
+    });
 router.route('/expenses')
     // create a expense (accessed at POST http://localhost:8080/api/expenses)
     .post(function(req, res) {
