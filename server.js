@@ -494,7 +494,8 @@ router.route('/users/connect')
                         _id: connected._id,
                         firstname: connected.firstname,
                         lastname: connected.lastname,
-                        username: connected.username
+                        username: connected.username,
+                        lang: connected.language
                     };
                     // generate new connexion token
                     var token = new Token();
@@ -531,6 +532,18 @@ router.route('/users/disconnect')
                     username: null
                 };
                 res.json({item: result});
+            });
+        });    
+    });
+router.route('/users/changeDefaultLanguage')
+    .post(function(req, res) {
+        isConnected(req.body.token, req.body.user, res,function () {
+            User.update({"_id": req.body.user}, {$set : {language: req.body.lang}}, function(err, token) {
+                if (err) {
+                    res.send(err);
+                }
+                
+                res.status(200).send({message: "Updated"});
             });
         });    
     });
