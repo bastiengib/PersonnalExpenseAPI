@@ -77,18 +77,19 @@ router.get('/', function(req, res) {
 router.route('/expenses/export')
     .get(function(req, res) {
         isConnected(req.query.token, req.query.user, res, function () {
-            Expense.find({owner: req.query.user}).populate('category').exec(function (err, expenses){
+            var end = new Date(req.query.y, req.query.m, req.query.d);
+            Expense.find({owner: req.query.user, date: {$lt :req.query.date}}).sort("-date").populate('category').exec(function (err, expenses){
                 if (err) {
                     res.send(err);
                 }
-
+                
                 var retour = [];
                 expenses.forEach(function(elt){
                     retour.push({
                         'a': elt._id.toString(),
                         'b': elt.name,
                         'c': elt.amount,
-                        'd': elt.date.getDate() +"/"+ elt.date.getMonth() +"/"+ elt.date.getFullYear(),
+                        'd': elt.date.getDate() +"/"+ +(elt.date.getMonth()+1) +"/"+ elt.date.getFullYear(),
                         'e': elt.category.name
                     });
                 });
